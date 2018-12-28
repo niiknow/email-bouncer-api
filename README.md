@@ -14,7 +14,7 @@ php -S 0.0.0.0:8888 -t public
 
 # API
 
-## POST|GET /api/v1/bounces/hard}?email=a-valid@email.com
+### POST|GET /api/v1/bounces/hard?email=a-valid@email.com
 > Record email as hard bounce - block for 8^7 minutes
 
 ## POST|GET /api/v1/bounces/soft?email=a-valid@email.com
