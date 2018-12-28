@@ -4,7 +4,7 @@ namespace App\Controllers;
 
 class BouncesController extends BaseController
 {
-    protected function handleBounce($email, $reason, $increment = 1)
+    protected function handleBounce($from, $email, $reason, $increment = 1)
     {
         $today = new \DateTime();
         $db    = $this->getOrDefault('DB', null);
@@ -31,6 +31,7 @@ class BouncesController extends BaseController
         $item->reason  = $reason;
         $item->email   = $email;
         $item->payload = $this->getOrDefault('BODY', '');
+        $item->from    = $this->getOrDefault('GET.from', $from);
         $item->count  += $increment;
 
         $exp_min = pow(8, $item->count);
@@ -67,7 +68,7 @@ class BouncesController extends BaseController
     public function hard()
     {
         $email = $this->getOrDefault('GET.email', null);
-        $this->handleBounce($email, 'hard|5xx', 8);
+        $this->handleBounce(null, $email, 'hard|5xx', 8);
     }
 
     /**
@@ -76,7 +77,7 @@ class BouncesController extends BaseController
     public function soft()
     {
         $email = $this->getOrDefault('GET.email', null);
-        $this->handleBounce($email, 'soft|4xx');
+        $this->handleBounce(null, $email, 'soft|4xx');
     }
 
     /**
@@ -85,7 +86,7 @@ class BouncesController extends BaseController
     public function complaint()
     {
         $email = $this->getOrDefault('GET.email', null);
-        $this->handleBounce($email, 'complaint', 3);
+        $this->handleBounce(null, $email, 'complaint', 3);
     }
 
     /**
@@ -141,7 +142,7 @@ class BouncesController extends BaseController
         $payload = json_decode($this->getOrDefault('BODY', '{}'), true);
 
         if (!isset($payload['Type'])) {
-            throw new HttpException(400, "Key 'Type' not found in payload ");
+            return $this->json("Key 'Type' not found in payload ", ['http_status' => 400]);
         }
 
         if ($payload['Type'] == 'SubscriptionConfirmation') {
@@ -149,6 +150,7 @@ class BouncesController extends BaseController
         } elseif ($payload['Type'] == 'Notification') {
             $message = json_decode($payload['Message'], true);
             $type    = mb_strtolower($message['notificationType']);
+            $source  = $sesMessage['mail']['source'];
 
             // only handle bounce and compalint, not delivery
             if ($type == 'bounce') {
@@ -164,6 +166,7 @@ class BouncesController extends BaseController
                 $bouncedRecipients = $message['bounce']['bouncedRecipients'];
                 foreach ($bouncedRecipients as $item) {
                     $this->handleBounce(
+                        $source,
                         $item['emailAddress'],
                         $bt . $item['diagnosticCode'] . '|' . $message['bounce']['bounceSubType'],
                         $bc
@@ -175,12 +178,13 @@ class BouncesController extends BaseController
                     if (isset($message['complaint']['complaintFeedbackType'])) {
                         // http://docs.aws.amazon.com/ses/latest/DeveloperGuide/notification-contents.html#complaint-object
                         $this->handleBounce(
+                            $source,
                             $item['emailAddress'],
                             'complaint|' . $message['complaint']['complaintFeedbackType'],
                             3
                         );
                     } else {
-                        $this->handleBounce($item['emailAddress'], 'complaint', 3);
+                        $this->handleBounce($source, $item['emailAddress'], 'complaint', 3);
                     }
                 }
             }

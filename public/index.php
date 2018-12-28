@@ -29,6 +29,7 @@ function initdb($f3)
         $sql = "CREATE TABLE IF NOT EXISTS `bounces` (
   " . $inct . ",
   `email` VARCHAR(191) NOT NULL UNIQUE,
+  `from` VARCHAR(191) NULL,
   `count` INT unsigned NOT NULL,
   `reason` VARCHAR(191) NOT NULL,
   `payload` TEXT NOT NULL,
