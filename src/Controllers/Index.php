@@ -9,6 +9,9 @@ class Index extends BaseController
     */
     public function index()
     {
+        $db  = $this->getOrDefault('DB', null);
+        $rst = $db->exec('DELETE FROM bounces WHERE expired_at < CURRENT_TIMESTAMP');
+
         $this->json('OK');
     }
 }
