@@ -101,7 +101,7 @@ class BouncesController extends BaseController
         $email = $this->getOrDefault('GET.email', null);
 
         if (!$this->isValidEmail($email)) {
-            return $this->json(['error' => 'Invalid email ' . $email], ['http_status' => 422]);
+            return $this->json(['error' => 'Invalid email ' . $email, 'sendable' => false], ['http_status' => 422]);
         }
 
         $db   = $this->getOrDefault('DB', null);
@@ -109,9 +109,8 @@ class BouncesController extends BaseController
         $item->load(array('email=?', $email));
 
         if ($item->dry()) {
-            return $this->json(['throttle' => -1]);
+            return $this->json(['throttle' => -1, 'sendable' => true], ['ttl' => $http_expire]);
         }
-
 
         // calculate throttle
         $today      = new \DateTime();
@@ -120,7 +119,7 @@ class BouncesController extends BaseController
 
         // set expire to 20 minutes to for CDN usage
         $http_expire = 20 * 60;
-        $this->json(['throttle' => $throttle], ['ttl' => $http_expire]);
+        $this->json(['throttle' => $throttle, 'sendable' => ($thottle < 1)], ['ttl' => $http_expire]);
     }
 
     /**
