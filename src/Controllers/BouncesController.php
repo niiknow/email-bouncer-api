@@ -97,8 +97,9 @@ class BouncesController extends BaseController
         $expired_at = \DateTime::createFromFormat("Y-m-d H:i:s", $item->expired_at);
         $throttle   = $expired_at->getTimestamp() - time();
 
-        //echo $expired_at->format("Y-m-d H:i:s");
-        $this->json(['throttle' => $throttle], ['ttl' => $throttle]);
+        // set expire to 20 minutes to for CDN usage
+        $http_expire = 20 * 60;
+        $this->json(['throttle' => $throttle], ['ttl' => $http_expire]);
     }
 
     /**
