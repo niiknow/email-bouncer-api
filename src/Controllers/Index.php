@@ -9,6 +9,6 @@ class Index extends BaseController
     */
     public function index()
     {
-        echo 'OK';
+        $this->json('OK');
     }
 }

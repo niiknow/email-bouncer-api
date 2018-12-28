@@ -29,5 +29,5 @@ storage/installed
 docker-compose.yml
 ._*.png
 
-storage/cache/
-storage/build/
+public/tmp/
+storage/build/*

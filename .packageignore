@@ -28,5 +28,5 @@ docker-compose.yml
 ._*.png
 
 tests/
-storage/cache/
+public/tmp/
 storage/build/
