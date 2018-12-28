@@ -30,6 +30,8 @@
             "rm -rf ./storage/build",
             "mkdir -p ./storage/build",
             "rm -f ./storage/cache/*.*",
+            "rm -f ./public/tmp/cache/*.*",
+            "rm -f ./storage/data/*.sqli*",
             "composer dump-autoload"
         ],
         "app:package": [

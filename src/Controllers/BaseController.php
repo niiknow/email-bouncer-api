@@ -24,7 +24,8 @@ class BaseController
         if ($isValid && $checkDns) {
             // check valid MX record
             list($name, $domain) = explode('@', $email);
-            return checkdnsrr($domain, 'MX'))
+
+            return checkdnsrr($domain, 'MX');
         }
 
         return $isValid;
@@ -45,6 +46,7 @@ class BaseController
         }
 
         list($name, $domain) = explode('@', $email);
+
         // check SMTP query
         $max_conn_time = 30;
         $sock          = '';
@@ -101,7 +103,7 @@ class BaseController
             if ($code == '250') {
                 // email address accepted : 250
                 $result = true;
-            } elseif($code == '451' || $code == '452') {
+            } elseif ($code == '451' || $code == '452') {
                 //email address greylisted : 451
                 $result = true;
             } else {

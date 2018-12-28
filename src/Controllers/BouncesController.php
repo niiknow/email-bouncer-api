@@ -101,7 +101,11 @@ class BouncesController extends BaseController
         $email = $this->getOrDefault('GET.email', null);
 
         if (!$this->isValidEmail($email, true)) {
-            return $this->json(['error' => 'Invalid email ' . $email, 'sendable' => false], ['http_status' => 422]);
+            return $this->json([
+                'throttle' => PHP_INT_MAX,
+                'error' => 'Invalid email '.$email,
+                'sendable' => false], ['http_status' => 422
+                ]);
         }
 
         $db   = $this->getOrDefault('DB', null);
