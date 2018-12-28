@@ -20,13 +20,20 @@ class BouncesController extends BaseController
             // insert new
             $item        = new \DB\SQL\Mapper($db, 'bounces');
             $item->count = 0;
+        } else {
+            $expired_at = \DateTime::createFromFormat("Y-m-d H:i:s", $item->expired_at);
+            $throttle   = $expired_at->getTimestamp() - time();
+
+            if ($throttle < 0) {
+                $item->count = 0;
+            }
         }
 
         $item->email   = $email;
         $item->payload = $this->getOrDefault('BODY', '');
         $item->count  += $increment;
 
-        $exp_min = pow(8, $item->count + 1) + 8;
+        $exp_min = pow(8, $item->count) + 8;
 
         if (is_infinite($exp_min)) {
             $exp_min = PHP_INT_MAX;
