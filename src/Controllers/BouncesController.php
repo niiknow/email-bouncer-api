@@ -130,6 +130,7 @@ class BouncesController extends BaseController
     {
         $emails = explode(',', $this->getOrDefault('GET.emails', ''));
         $rst    = [];
+        $values = [];
 
         foreach ($emails as $email) {
             if ($this->isValidEmail($email)) {
