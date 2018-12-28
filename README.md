@@ -2,10 +2,10 @@
 > A simple api to handle email bounces
 
 # Features
-- [x] hard bounce - block/blacklist almost permanently for (8^7 ~ approximately 4 years) minutes.
-- [x] soft bounce - block exponentially in multiple of 8^n, i.e. 8, 64, 512, 4096, etc... in minutes.  Where n is the number of consecutive soft bounces.  When soft bounce expired, it restart to 8 minutes.
+- [x] hard bounce - block/blacklist almost permanently for (8^7 ~ approximately 4 years) minutes
+- [x] soft bounce - block exponentially in multiple of 8^n, i.e. 8, 64, 512, 4096, etc... in minutes.  Where n is the number of consecutive soft bounces.  When soft bounce expired, it restart to 8 minutes
 - [x] index - home endpoint can be use for healthcheck and also for cleanup of expired bounce with query string `/?purge=true`
-- [x] handle SES->SNS webhook events.
+- [x] handle SES->SNS webhook events
 
 # Development
 
@@ -70,6 +70,6 @@ Result contain only emails that are found (previously bounced); if we do not hav
 This feature makes it all worth it.
 
 # Point of interest
-
+Use this with [Haraka](https://haraka.github.io/) smtp server.  I may create a Haraka plugin for this service.
 
 # MIT
