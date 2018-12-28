@@ -140,18 +140,20 @@ class BouncesController extends BaseController
             }
         }
 
-        $count   = count($values);
-        $db      = $this->getOrDefault('DB', null);
-        $results = $db->exec(
-            "SELECT email, expired_at FROM bounces WHERE email in ( ?".str_repeat(", ?", $count-1).")",
-            $values
-        );
+        $count = count($values);
+        if ($count > 0) {
+            $db      = $this->getOrDefault('DB', null);
+            $results = $db->exec(
+                "SELECT email, expired_at FROM bounces WHERE email in ( ?".str_repeat(", ?", $count-1).")",
+                $values
+            );
 
-        $today = time();
-        foreach ($results as $item) {
-            $expired_at = \DateTime::createFromFormat("Y-m-d H:i:s", $item->expired_at);
+            $today = time();
+            foreach ($results as $item) {
+                $expired_at = \DateTime::createFromFormat("Y-m-d H:i:s", $item->expired_at);
 
-            $rst[$item->email] = $expired_at->getTimestamp() - $today;
+                $rst[$item->email] = $expired_at->getTimestamp() - $today;
+            }
         }
 
         return $this->json($rst);
