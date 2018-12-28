@@ -30,4 +30,4 @@ docker-compose.yml
 tests/
 public/tmp/
 storage/build/
-storage/data/*.sqlite
+storage/data/*.sqlit*
