@@ -15,8 +15,8 @@ class BouncesController extends BaseController
         $item  = new \DB\SQL\Mapper($db, 'bounces');
         $item->load(array('email=?', $email));
 
-        if ($increment > 8) {
-            $$increment = 8;
+        if ($increment > 7) {
+            $$increment = 7;
         }
 
         if ($item->dry()) {
@@ -72,7 +72,7 @@ class BouncesController extends BaseController
     public function hard()
     {
         $email = $this->getOrDefault('GET.email', null);
-        $this->handleBounce(null, $email, 'hard|5xx', 8);
+        $this->handleBounce(null, $email, 'hard|5xx', 7);  // 7 is ~ 4 years, 8 ~ 32 years
     }
 
     /**
@@ -182,12 +182,20 @@ class BouncesController extends BaseController
 
                 if ($message['bounce']['bounceType'] == 'Permanent') {
                     $bt = 'hard|';
-                    $bc = 8;
+                    $bc = 7; // 7 is ~ 4 years, 8 ~ 32 years
                 }
 
                 // handle recipients
                 $bouncedRecipients = $message['bounce']['bouncedRecipients'];
                 foreach ($bouncedRecipients as $item) {
+                    // sometime, bounceType come in as Transient but status is actually 5xx or Permanent
+                    // example, for non-existing email, outlook/office 365 responses with:
+                    // 554 5.4.14 Hop count exceeded - possible mail loop ATTR34
+                    if (isset($item['status']) && $item['status'][0] == '5') {
+                        $bt = 'hard|';
+                        $bc = 4; // 3 days
+                    }
+
                     $this->handleBounce(
                         $source,
                         $item['emailAddress'],
@@ -204,7 +212,7 @@ class BouncesController extends BaseController
                             $source,
                             $item['emailAddress'],
                             'complaint|' . $message['complaint']['complaintFeedbackType'],
-                            3
+                            6 // 183 days or about 6 months
                         );
                     } else {
                         $this->handleBounce($source, $item['emailAddress'], 'complaint', 3);
