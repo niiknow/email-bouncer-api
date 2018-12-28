@@ -35,7 +35,7 @@
         "app:package": [
             "composer app:clear",
             "composer update",
-            "tar -X './.packageignore' -zcvf ./storage/build/dist.tar.gz ./"
+            "COPYFILE_DISABLE=1 tar -X './.packageignore' -zcvf ./storage/build/dist.tar.gz ./"
         ],
         "app:production": [
             "composer app:clear",

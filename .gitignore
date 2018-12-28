@@ -28,8 +28,10 @@ public/js/parts/*
 storage/installed
 docker-compose.yml
 ._*.png
+._*
 
 public/tmp/
 storage/build/*
 storage/data/*.sqlit*
+.env.ini
 

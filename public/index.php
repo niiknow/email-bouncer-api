@@ -55,12 +55,6 @@ function boot()
 
     // Run app
     $f3->run();
-
-    // hide potentially sensitive info
-    ini_set('expose_php', 'off');
-    if (function_exists('header_remove')) {
-        header_remove('X-Powered-By'); // PHP 5.3+
-    }
 }
 
 boot();

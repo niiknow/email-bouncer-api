@@ -26,8 +26,11 @@ coverage/
 storage/installed
 docker-compose.yml
 ._*.png
+._*
 
 tests/
 public/tmp/
 storage/build/
 storage/data/*.sqlit*
+.env.ini
+

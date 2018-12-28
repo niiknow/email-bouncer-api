@@ -64,6 +64,7 @@ class BaseController
         // default status is 200 - OK
         $f3->status(array_key_exists('http_status', $params) ? $params['http_status'] : 200);
 
+        header_remove('X-Powered-By');
         ksort($headers);
         foreach ($headers as $header => $value) {
             if (!isset($value)) {
