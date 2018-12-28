@@ -15,10 +15,16 @@ php -S 0.0.0.0:8888 -t public
 # API
 
 ## POST|GET /api/v1/bounces/hard}?email=a-valid@email.com
-> Record email as hard bounce - block 8^7 minutes
+> Record email as hard bounce - block for 8^7 minutes
 
 ## POST|GET /api/v1/bounces/soft?email=a-valid@email.com
 > Record email as soft bounce - block exponentially in multiple of 8^n minutes
+
+1. First soft bounce, block for 8 minutes
+2. Second soft bounce within 8 minutes, block for 64 minutes
+3. Third soft bounce within 64 minutes, block for 512 minutes
+4. Forth soft bounce within 512 minutes, block for 4096 minutes ~ 3 days
+5. And so on...
 
 ## POST|GET /api/v1/bounces/complaint?email=a-valid@email.com
 > Record email as soft bounce - block exponentially for 8^3 minutes
