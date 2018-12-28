@@ -119,7 +119,7 @@ class BouncesController extends BaseController
 
         // set expire to 20 minutes to for CDN usage
         $http_expire = 20 * 60;
-        $this->json(['throttle' => $throttle, 'sendable' => ($thottle < 1)], ['ttl' => $http_expire]);
+        $this->json(['throttle' => $throttle, 'sendable' => ($throttle < 1)], ['ttl' => $http_expire]);
     }
 
     /**
