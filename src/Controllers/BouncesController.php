@@ -150,7 +150,7 @@ class BouncesController extends BaseController
         } elseif ($payload['Type'] == 'Notification') {
             $message = json_decode($payload['Message'], true);
             $type    = mb_strtolower($message['notificationType']);
-            $source  = $sesMessage['mail']['source'];
+            $source  = $message['mail']['source'];
 
             // only handle bounce and compalint, not delivery
             if ($type == 'bounce') {
