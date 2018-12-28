@@ -12,4 +12,49 @@ To run locally:
 php -S 0.0.0.0:8888 -t public
 ```
 
+# API
+
+## POST|GET /api/v1/bounces/hard}?email=a-valid@email.com
+> Record email as hard bounce - block 8^7 minutes
+
+## POST|GET /api/v1/bounces/soft?email=a-valid@email.com
+> Record email as soft bounce - block exponentially in multiple of 8^n minutes
+
+## POST|GET /api/v1/bounces/complaint?email=a-valid@email.com
+> Record email as soft bounce - block exponentially for 8^3 minutes
+
+Complaint is in between a soft bounce and a hard bounce.  It could be because the emailing System scan attachment and detect as a virus, or an actual User complaint with their email Provider.
+
+## GET /api/v1/bounces/stat?email=a-valid@email.com
+> Determine if email is sendable
+
+Response:
+```json
+{
+   "throttle": "number of seconds before email is sendable, negative number implies email is sendable",
+   "sendable": true/false
+}
+
+```
+
+This is probably the most common use method.  Let say you want to send and email:
+1. First, hit `/api/v1/bounces/stat?email=a-valid@email.com` to determine if you can send the email.
+2. You don't have to parse the json, simply do `response.indexOf('true') > 0` to determine if you can send email.
+3. Do not send email if check is not true.
+
+## GET /api/v1/bounces/stats?emails=a-invalid@email.com,b-invalid@email.net,c-invalid@email.org
+> Provide a list of emails to check
+
+
+Result contain only emails that are found (previously bounced); if we do not have a record of the email, then it's probably sendable:
+```json
+{
+   "a-invalid@email.com": "number of seconds before email is sendable, negative number implies email is sendable",
+   "b-invalid@email.net": "same as above"
+}
+```
+
+## GET /api/v1/bounces/aws-ses
+> This endpoint is use for handling AWS SES->SNS subscription/webhook.  See also - https://docs.aws.amazon.com/ses/latest/DeveloperGuide/event-publishing-retrieving-sns-examples.html 
+
 # MIT

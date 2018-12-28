@@ -206,7 +206,7 @@ class BouncesController extends BaseController
                 // semi-hardbounce customer that complain about spam at their mail provider
                 foreach ($message['complaint']['complainedRecipients'] as $item) {
                     if (isset($message['complaint']['complaintFeedbackType'])) {
-                        // http://docs.aws.amazon.com/ses/latest/DeveloperGuide/notification-contents.html#complaint-object
+                        // https://docs.aws.amazon.com/ses/latest/DeveloperGuide/event-publishing-retrieving-sns-examples.html
                         $this->handleBounce(
                             $source,
                             $item['emailAddress'],
