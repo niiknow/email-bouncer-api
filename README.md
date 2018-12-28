@@ -1,8 +1,8 @@
 # email-bouncer-api
 > A simple api to handle email bounces
 
-* hard bounce - block/blacklist almost permanently for (8^8) minutes.
-* soft bounce - block for 7 minutes (approximately ~ 4 years), exponentially in multiple of 8^n, i.e. 8, 64, 512, 4096, etc... in minutes.  Where n is the number of soft bounces.  When a soft bounce expired, it restart at 8 minutes.
+* hard bounce - block/blacklist almost permanently for (8^7 ~ approximately 4 years) minutes.
+* soft bounce - block exponentially in multiple of 8^n, i.e. 8, 64, 512, 4096, etc... in minutes.  Where n is the number of consecutive soft bounces.  When soft bounce expired, it restart to 8 minutes.
 * index - home endpoint can be use for healthcheck and also for cleanup of expired bounce with query string `/?purge=true`
 
 # Development
