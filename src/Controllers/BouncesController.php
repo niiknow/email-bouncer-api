@@ -100,7 +100,7 @@ class BouncesController extends BaseController
     {
         $email = $this->getOrDefault('GET.email', null);
 
-        if (!$this->isValidEmail($email)) {
+        if (!$this->isValidEmail($email, true)) {
             return $this->json(['error' => 'Invalid email ' . $email, 'sendable' => false], ['http_status' => 422]);
         }
 
@@ -132,9 +132,10 @@ class BouncesController extends BaseController
         $values = [];
 
         foreach ($emails as $email) {
-            if ($this->isValidEmail($email)) {
+            if ($this->isValidEmail($email, true)) {
                 $values[] = $email;
             } else {
+                // not a valid email, set max throttle
                 $rst[$email] = PHP_INT_MAX;
             }
         }
@@ -158,6 +159,63 @@ class BouncesController extends BaseController
         return $this->json($rst);
     }
 
+    protected function handleNotification($payload)
+    {
+        $message = json_decode($payload['Message'], true);
+        $type    = mb_strtolower($message['notificationType']);
+        $source  = $message['mail']['source'];
+
+        // only handle bounce and compalint, not delivery
+        if ($type == 'bounce') {
+            $bt = 'soft|';
+            $bc = 1;
+
+            if ($message['bounce']['bounceType'] == 'Permanent') {
+                $bt = 'hard|';
+                $bc = 7; // 7 is ~ 4 years, 8 ~ 32 years
+            }
+
+            // handle recipients
+            $bouncedRecipients = $message['bounce']['bouncedRecipients'];
+            foreach ($bouncedRecipients as $item) {
+                // sometime, bounceType come in as Transient but status is actually 5xx or Permanent
+                // example, for non-existing email, outlook/office 365 responses with:
+                // 554 5.4.14 Hop count exceeded - possible mail loop ATTR34
+                if (isset($item['status']) && $item['status'][0] == '5') {
+                    $bt = 'hard|';
+                    $bc = 4; // 3 days
+                }
+
+                $this->handleBounce(
+                    $source,
+                    $item['emailAddress'],
+                    $bt . $item['diagnosticCode'] . '|' . $message['bounce']['bounceSubType'],
+                    $bc
+                );
+            }
+        } elseif ($type == 'complaint') {
+            // semi-hardbounce customer that complain about spam at their mail provider
+            foreach ($message['complaint']['complainedRecipients'] as $item) {
+                if (isset($message['complaint']['complaintFeedbackType'])) {
+                    // https://docs.aws.amazon.com/ses/latest/DeveloperGuide/event-publishing-retrieving-sns-examples.html
+                    $this->handleBounce(
+                        $source,
+                        $item['emailAddress'],
+                        'complaint|' . $message['complaint']['complaintFeedbackType'],
+                        6 // 183 days or about 6 months
+                    );
+                } else {
+                    $this->handleBounce(
+                        $source,
+                        $item['emailAddress'],
+                        'complaint',
+                        3
+                    );
+                }
+            }
+        }
+    }
+
     public function awsSes()
     {
         // handle SES bounces
@@ -170,54 +228,7 @@ class BouncesController extends BaseController
         if ($payload['Type'] == 'SubscriptionConfirmation') {
             $result = file_get_contents($payload['SubscribeURL']);
         } elseif ($payload['Type'] == 'Notification') {
-            $message = json_decode($payload['Message'], true);
-            $type    = mb_strtolower($message['notificationType']);
-            $source  = $message['mail']['source'];
-
-            // only handle bounce and compalint, not delivery
-            if ($type == 'bounce') {
-                $bt = 'soft|';
-                $bc = 1;
-
-                if ($message['bounce']['bounceType'] == 'Permanent') {
-                    $bt = 'hard|';
-                    $bc = 7; // 7 is ~ 4 years, 8 ~ 32 years
-                }
-
-                // handle recipients
-                $bouncedRecipients = $message['bounce']['bouncedRecipients'];
-                foreach ($bouncedRecipients as $item) {
-                    // sometime, bounceType come in as Transient but status is actually 5xx or Permanent
-                    // example, for non-existing email, outlook/office 365 responses with:
-                    // 554 5.4.14 Hop count exceeded - possible mail loop ATTR34
-                    if (isset($item['status']) && $item['status'][0] == '5') {
-                        $bt = 'hard|';
-                        $bc = 4; // 3 days
-                    }
-
-                    $this->handleBounce(
-                        $source,
-                        $item['emailAddress'],
-                        $bt . $item['diagnosticCode'] . '|' . $message['bounce']['bounceSubType'],
-                        $bc
-                    );
-                }
-            } elseif ($type == 'complaint') {
-                // semi-hardbounce customer that complain about spam at their mail provider
-                foreach ($message['complaint']['complainedRecipients'] as $item) {
-                    if (isset($message['complaint']['complaintFeedbackType'])) {
-                        // https://docs.aws.amazon.com/ses/latest/DeveloperGuide/event-publishing-retrieving-sns-examples.html
-                        $this->handleBounce(
-                            $source,
-                            $item['emailAddress'],
-                            'complaint|' . $message['complaint']['complaintFeedbackType'],
-                            6 // 183 days or about 6 months
-                        );
-                    } else {
-                        $this->handleBounce($source, $item['emailAddress'], 'complaint', 3);
-                    }
-                }
-            }
+            $this->handleNotification($payload);
         }
 
         return $this->json('OK');
