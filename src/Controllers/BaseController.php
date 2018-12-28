@@ -11,6 +11,11 @@ class BaseController
         $this->cache  = \Cache::instance();
     }
 
+    public function isValidEmail($email)
+    {
+        return filter_var($email, FILTER_VALIDATE_EMAIL);
+    }
+
     public function getStorageDir()
     {
         return trim($this->getOrDefault('STORAGE', '../storage/'), '/') . '/';

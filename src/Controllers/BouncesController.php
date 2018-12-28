@@ -6,6 +6,10 @@ class BouncesController extends BaseController
 {
     protected function handleBounce($from, $email, $reason, $increment = 1)
     {
+        if (!$this->isValidEmail($email)) {
+            return;
+        }
+
         $today = new \DateTime();
         $db    = $this->getOrDefault('DB', null);
         $item  = new \DB\SQL\Mapper($db, 'bounces');
@@ -95,13 +99,19 @@ class BouncesController extends BaseController
     public function stat()
     {
         $email = $this->getOrDefault('GET.email', null);
-        $db    = $this->getOrDefault('DB', null);
-        $item  = new \DB\SQL\Mapper($db, 'bounces');
+
+        if (!$this->isValidEmail($email)) {
+            return $this->json(['error' => 'Invalid email ' . $email], ['http_status' => 422]);
+        }
+
+        $db   = $this->getOrDefault('DB', null);
+        $item = new \DB\SQL\Mapper($db, 'bounces');
         $item->load(array('email=?', $email));
 
         if ($item->dry()) {
             return $this->json(['throttle' => -1]);
         }
+
 
         // calculate throttle
         $today      = new \DateTime();
@@ -118,7 +128,17 @@ class BouncesController extends BaseController
      */
     public function stats()
     {
-        $values  = explode(',', $this->getOrDefault('GET.emails', ''));
+        $emails = explode(',', $this->getOrDefault('GET.emails', ''));
+        $rst    = [];
+
+        foreach ($emails as $email) {
+            if ($this->isValidEmail($email)) {
+                $values[] = $email;
+            } else {
+                $rst[$email] = PHP_INT_MAX;
+            }
+        }
+
         $count   = count($values);
         $db      = $this->getOrDefault('DB', null);
         $results = $db->exec(
@@ -133,7 +153,7 @@ class BouncesController extends BaseController
             $rst[$item->email] = $expired_at->getTimestamp() - $today;
         }
 
-        return $this->json($results);
+        return $this->json($rst);
     }
 
     public function awsSes()
