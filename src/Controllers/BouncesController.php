@@ -67,7 +67,7 @@ class BouncesController extends BaseController
     public function hard()
     {
         $email = $this->getOrDefault('GET.email', null);
-        $this->handleBounce($email, 'hard;5xx', 8);
+        $this->handleBounce($email, 'hard|5xx', 8);
     }
 
     /**
@@ -76,7 +76,7 @@ class BouncesController extends BaseController
     public function soft()
     {
         $email = $this->getOrDefault('GET.email', null);
-        $this->handleBounce($email, 'soft;4xx');
+        $this->handleBounce($email, 'soft|4xx');
     }
 
     /**
@@ -143,30 +143,30 @@ class BouncesController extends BaseController
 
             // only handle bounce and compalint, not delivery
             if ($type == 'bounce') {
-                $bounce = 'soft;';
-                $bcount = 1;
+                $bt = 'soft|';
+                $bc = 1;
 
                 if ($message['bounce']['bounceType'] == 'Permanent') {
-                    $bounce = 'hard';
-                    $bcount = 8;
+                    $bt = 'hard|';
+                    $bc = 8;
                 }
 
-                // handle softbounce
+                // handle recipients
                 $bouncedRecipients = $message['bounce']['bouncedRecipients'];
-                foreach ($bouncedRecipients as $bouncedRecipient) {
-                    $this->handleBounce($bouncedRecipient['emailAddress'], $bounce . $bouncedRecipient['diagnosticCode'], $bcount);
+                foreach ($bouncedRecipients as $item) {
+                    $this->handleBounce($item['emailAddress'], $bt . $item['diagnosticCode'] . '|' . $message['bounce']['bounceSubType'], $bc);
                 }
             } elseif ($type == 'complaint') {
                 // semi-hardbounce customer that complain about spam at their mail provider
-                foreach ($message['complaint']['complainedRecipients'] as $complainedRecipient) {
+                foreach ($message['complaint']['complainedRecipients'] as $item) {
                     if (isset($message['complaint']['complaintFeedbackType'])) {
                         // http://docs.aws.amazon.com/ses/latest/DeveloperGuide/notification-contents.html#complaint-object
-                        $this->handleBounce($bouncedRecipient['emailAddress'], 'complaint;' . $message['complaint']['complaintFeedbackType'], 3);
+                        $this->handleBounce($item['emailAddress'], 'complaint|' . $message['complaint']['complaintFeedbackType'], 3);
                     }
                 }
             }
         }
 
-        return $rows;
+        return $this->json('OK');
     }
 }
