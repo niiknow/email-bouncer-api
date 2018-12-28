@@ -4,9 +4,8 @@ namespace App\Controllers;
 
 class BouncesController extends BaseController
 {
-    protected function handleBounce($reason, $increment = 1)
+    protected function handleBounce($email, $reason, $increment = 1)
     {
-        $email = $this->getOrDefault('GET.email', null);
         $today = new \DateTime();
         $db    = $this->getOrDefault('DB', null);
         $item  = new \DB\SQL\Mapper($db, 'bounces');
@@ -67,7 +66,8 @@ class BouncesController extends BaseController
      */
     public function hard()
     {
-        $this->handleBounce('hard', 8);
+        $email = $this->getOrDefault('GET.email', null);
+        $this->handleBounce($email, 'hard;5xx', 8);
     }
 
     /**
@@ -75,7 +75,8 @@ class BouncesController extends BaseController
      */
     public function soft()
     {
-        $this->handleBounce('soft');
+        $email = $this->getOrDefault('GET.email', null);
+        $this->handleBounce($email, 'soft;4xx');
     }
 
     /**
@@ -123,5 +124,49 @@ class BouncesController extends BaseController
         }
 
         return $this->json($results);
+    }
+
+    public function aws()
+    {
+        // handle SES bounces
+        $payload = json_decode($this->getOrDefault('BODY', '{}'), true);
+
+        if (!isset($payload['Type'])) {
+            throw new HttpException(400, "Key 'Type' not found in payload ");
+        }
+
+        if ($payload['Type'] == 'SubscriptionConfirmation') {
+            $result = file_get_contents($payload['SubscribeURL']);
+        } elseif ($payload['Type'] == 'Notification') {
+            $message = json_decode($payload['Message'], true);
+            $type    = mb_strtolower($message['notificationType']);
+
+            // only handle bounce and compalint, not delivery
+            if ($type == 'bounce') {
+                $bounce = 'soft;';
+                $bcount = 1;
+
+                if ($message['bounce']['bounceType'] == 'Permanent') {
+                    $bounce = 'hard';
+                    $bcount = 8;
+                }
+
+                // handle softbounce
+                $bouncedRecipients = $message['bounce']['bouncedRecipients'];
+                foreach ($bouncedRecipients as $bouncedRecipient) {
+                    $this->handleBounce($bouncedRecipient['emailAddress'], $bounce . $bouncedRecipient['diagnosticCode'], $bcount);
+                }
+            } elseif ($type == 'complaint') {
+                // semi-hardbounce customer that complain about spam at their mail provider
+                foreach ($message['complaint']['complainedRecipients'] as $complainedRecipient) {
+                    if (isset($message['complaint']['complaintFeedbackType'])) {
+                        // http://docs.aws.amazon.com/ses/latest/DeveloperGuide/notification-contents.html#complaint-object
+                        $this->handleBounce($bouncedRecipient['emailAddress'], 'complaint;' . $message['complaint']['complaintFeedbackType'], 3);
+                    }
+                }
+            }
+        }
+
+        return $rows;
     }
 }
