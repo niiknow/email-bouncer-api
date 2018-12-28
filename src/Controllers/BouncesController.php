@@ -162,6 +162,8 @@ class BouncesController extends BaseController
                     if (isset($message['complaint']['complaintFeedbackType'])) {
                         // http://docs.aws.amazon.com/ses/latest/DeveloperGuide/notification-contents.html#complaint-object
                         $this->handleBounce($item['emailAddress'], 'complaint|' . $message['complaint']['complaintFeedbackType'], 3);
+                    } else {
+                        $this->handleBounce($item['emailAddress'], 'complaint', 3);
                     }
                 }
             }
