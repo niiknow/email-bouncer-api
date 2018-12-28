@@ -80,6 +80,15 @@ class BouncesController extends BaseController
     }
 
     /**
+     * handle complaint
+     */
+    public function complaint()
+    {
+        $email = $this->getOrDefault('GET.email', null);
+        $this->handleBounce($email, 'complaint', 3);
+    }
+
+    /**
      * check an email for sends throttle
      */
     public function stat()
@@ -126,7 +135,7 @@ class BouncesController extends BaseController
         return $this->json($results);
     }
 
-    public function aws()
+    public function awsSes()
     {
         // handle SES bounces
         $payload = json_decode($this->getOrDefault('BODY', '{}'), true);
@@ -154,14 +163,22 @@ class BouncesController extends BaseController
                 // handle recipients
                 $bouncedRecipients = $message['bounce']['bouncedRecipients'];
                 foreach ($bouncedRecipients as $item) {
-                    $this->handleBounce($item['emailAddress'], $bt . $item['diagnosticCode'] . '|' . $message['bounce']['bounceSubType'], $bc);
+                    $this->handleBounce(
+                        $item['emailAddress'],
+                        $bt . $item['diagnosticCode'] . '|' . $message['bounce']['bounceSubType'],
+                        $bc
+                    );
                 }
             } elseif ($type == 'complaint') {
                 // semi-hardbounce customer that complain about spam at their mail provider
                 foreach ($message['complaint']['complainedRecipients'] as $item) {
                     if (isset($message['complaint']['complaintFeedbackType'])) {
                         // http://docs.aws.amazon.com/ses/latest/DeveloperGuide/notification-contents.html#complaint-object
-                        $this->handleBounce($item['emailAddress'], 'complaint|' . $message['complaint']['complaintFeedbackType'], 3);
+                        $this->handleBounce(
+                            $item['emailAddress'],
+                            'complaint|' . $message['complaint']['complaintFeedbackType'],
+                            3
+                        );
                     } else {
                         $this->handleBounce($item['emailAddress'], 'complaint', 3);
                     }
