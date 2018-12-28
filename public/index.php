@@ -16,15 +16,15 @@ function initdb($f3)
             $f3->get('db_password')
         ));
     } else {
-        $extra = '';
+        $extra = ';';
         $dbpath = 'sqlite:' . APP_PATH . $f3->get('db_file');
         $f3->set('DB', new DB\SQL($dbpath));
     }
 
     // init if cache not found
-    if ($f3->get('db.create') && !$cache->exists('tables', 'true')) {
-        $db  = $f3->get('db');
-        $sql = "CREATE TABLE IF NOT EXISTS `bounce` (
+    if ($f3->get('db_create') && !$cache->exists('tables')) {
+        $db  = $f3->get('DB');
+        $sql = "CREATE TABLE IF NOT EXISTS `bounces` (
   `email` VARCHAR(191) NOT NULL PRIMARY KEY,
   `count` INT unsigned NOT NULL,
   `payload` TEXT NOT NULL,
@@ -32,7 +32,7 @@ function initdb($f3)
   `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 )" . $extra;
 
-        $db->exec($sql);
+        $db->exec($sql . ' CREATE INDEX [IF NOT EXISTS] bounces_expired_at ON bounces(expired_at);');
         $cache->set('tables', 'true', 600);
     }
 }

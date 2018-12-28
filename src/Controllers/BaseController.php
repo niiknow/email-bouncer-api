@@ -6,8 +6,9 @@ class BaseController
 {
     public function __construct(\Base $f3, array $params = [])
     {
-        $this->f3    = $f3;
-        $this->cache = \Cache::instance();
+        $this->f3     = $f3;
+        $this->params = $params;
+        $this->cache  = \Cache::instance();
     }
 
     public function getStorageDir()

@@ -31,3 +31,5 @@ docker-compose.yml
 
 public/tmp/
 storage/build/*
+storage/data/*.sqlite
+
