@@ -6,6 +6,7 @@ function initdb($f3)
     $f3->set('CACHE', $f3->get('cache'));
 
     $cache = \Cache::instance();
+    $inct  = ' `id` INTEGER PRIMARY KEY autoincrement';
     $extra = ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;';
 
     if ($f3->get('db_password') !== null) {
@@ -15,6 +16,7 @@ function initdb($f3)
             $f3->get('db_username'),
             $f3->get('db_password')
         ));
+        $inct  = ' `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY';
     } else {
         $extra = ';';
         $dbpath = 'sqlite:' . APP_PATH . $f3->get('db_file');
@@ -25,14 +27,16 @@ function initdb($f3)
     if ($f3->get('db_create') && !$cache->exists('tables')) {
         $db  = $f3->get('DB');
         $sql = "CREATE TABLE IF NOT EXISTS `bounces` (
-  `email` VARCHAR(191) NOT NULL PRIMARY KEY,
+  " . $inct . ",
+  `email` VARCHAR(191) NOT NULL UNIQUE,
   `count` INT unsigned NOT NULL,
+  `reason` VARCHAR(191) NOT NULL,
   `payload` TEXT NOT NULL,
   `expired_at` TIMESTAMP NOT NULL,
   `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 )" . $extra;
 
-        $db->exec($sql . ' CREATE INDEX [IF NOT EXISTS] bounces_expired_at ON bounces(expired_at);');
+        $db->exec($sql);
         $cache->set('tables', 'true', 600);
     }
 }

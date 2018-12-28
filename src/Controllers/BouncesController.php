@@ -4,18 +4,18 @@ namespace App\Controllers;
 
 class BouncesController extends BaseController
 {
-    /**
-     * handle saving of bounce notification
-     *
-     * @param  integer $increment exponential counter
-     */
-    protected function handleBounce($increment = 1)
+    protected function handleBounce($reason, $increment = 1)
     {
         $email = $this->getOrDefault('GET.email', null);
         $today = new \DateTime();
         $db    = $this->getOrDefault('DB', null);
         $item  = new \DB\SQL\Mapper($db, 'bounces');
         $item->load(array('email=?', $email));
+
+        if ($increment > 8) {
+            $$increment = 8;
+        }
+
         if ($item->dry()) {
             // insert new
             $item        = new \DB\SQL\Mapper($db, 'bounces');
@@ -29,11 +29,12 @@ class BouncesController extends BaseController
             }
         }
 
+        $item->reason  = $reason;
         $item->email   = $email;
         $item->payload = $this->getOrDefault('BODY', '');
         $item->count  += $increment;
 
-        $exp_min = pow(8, $item->count) + 8;
+        $exp_min = pow(8, $item->count);
 
         if (is_infinite($exp_min)) {
             $exp_min = PHP_INT_MAX;
@@ -66,7 +67,7 @@ class BouncesController extends BaseController
      */
     public function hard()
     {
-        $this->handleBounce(8);
+        $this->handleBounce('hard', 8);
     }
 
     /**
@@ -74,7 +75,7 @@ class BouncesController extends BaseController
      */
     public function soft()
     {
-        $this->handleBounce();
+        $this->handleBounce('soft');
     }
 
     /**
