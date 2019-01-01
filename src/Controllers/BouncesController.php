@@ -112,8 +112,14 @@ class BouncesController extends BaseController
         $item = new \DB\SQL\Mapper($db, 'bounces');
         $item->load(array('email=?', $email));
 
+        // set expire to 20 minutes to for CDN usage
+        $http_expire = 20 * 60;
+
         if ($item->dry()) {
-            return $this->json(['throttle' => -1, 'sendable' => true], ['ttl' => $http_expire]);
+            return $this->json([
+                'throttle' => -1, 'sendable' => true],
+                ['ttl' => $http_expire]
+            );
         }
 
         // calculate throttle
@@ -121,9 +127,10 @@ class BouncesController extends BaseController
         $expired_at = \DateTime::createFromFormat("Y-m-d H:i:s", $item->expired_at);
         $throttle   = $expired_at->getTimestamp() - time();
 
-        // set expire to 20 minutes to for CDN usage
-        $http_expire = 20 * 60;
-        $this->json(['throttle' => $throttle, 'sendable' => ($throttle < 1)], ['ttl' => $http_expire]);
+        $this->json([
+            'throttle' => $throttle,
+            'sendable' => ($throttle < 1)
+        ], ['ttl' => $http_expire]);
     }
 
     /**
