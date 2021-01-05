@@ -1,9 +1,12 @@
 <?php
-
 namespace App\Controllers;
 
 class BaseController
 {
+    /**
+     * @param \Base $f3
+     * @param array $params
+     */
     public function __construct(\Base $f3, array $params = [])
     {
         $this->f3     = $f3;
@@ -12,11 +15,31 @@ class BaseController
     }
 
     /**
+     * @param  $key
+     * @param  $default
+     * @return mixed
+     */
+    public function getOrDefault($key, $default = null)
+    {
+        $rst = $this->f3->get($key);
+        if (!isset($rst)) {
+            return $default;
+        }
+
+        return $rst;
+    }
+
+    public function getStorageDir()
+    {
+        return trim($this->getOrDefault('STORAGE', '../storage/'), '/') . '/';
+    }
+
+    /**
      * Validate if exist is valid.
      *
      * @param  String  $email    the email to validate
      * @param  boolean $checkDns true to check for MX record
-     * @return boolean           false if email is not valid
+     * @return boolean false if email is not valid
      */
     public function isValidEmail($email, $checkDns = false)
     {
@@ -35,7 +58,7 @@ class BaseController
      * Valid if email actually exists at destination email server.
      *
      * @param  String  $email this is the email
-     * @return boolean        false means is invalid or does not exists
+     * @return boolean false means is invalid or does not exists
      */
     public function isValidInbox($email)
     {
@@ -53,8 +76,8 @@ class BaseController
         $port          = 25;
         $max_read_time = 5;
         $users         = $name;
-        $hosts         = array();
-        $mxweights     = array();
+        $hosts         = [];
+        $mxweights     = [];
 
         getmxrr($domain, $hosts, $mxweights);
         $mxs = array_combine($hosts, $mxweights);
@@ -62,7 +85,25 @@ class BaseController
         $mxs[$domain] = 100;
         $timeout      = $max_conn_time / count($mxs);
 
-        // try to check each host
+        // try to check each host port 25
+        while (list($host) = each($mxs)) {
+            // connect to SMTP server
+            if ($sock = fsockopen($host, $port, $errno, $errstr, (float) $timeout)) {
+                stream_set_timeout($sock, $max_read_time);
+                break;
+            }
+        }
+        // try to check each host port 2525
+        $port = 2525;
+        while (list($host) = each($mxs)) {
+            // connect to SMTP server
+            if ($sock = fsockopen($host, $port, $errno, $errstr, (float) $timeout)) {
+                stream_set_timeout($sock, $max_read_time);
+                break;
+            }
+        }
+        // try to check each host port 587
+        $port = 587;
         while (list($host) = each($mxs)) {
             // connect to SMTP server
             if ($sock = fsockopen($host, $port, $errno, $errstr, (float) $timeout)) {
@@ -77,33 +118,43 @@ class BaseController
             preg_match('/^([0-9]{3}) /ims', $reply, $matches);
             $code = isset($matches[1]) ? $matches[1] : '';
 
-            if ($code != '220') {
+            if ($code !== '220') {
                 return $result;
             }
 
             // initial SMTP connection
-            $msg = "HELO ".$domain;
-            fwrite($sock, $msg."\r\n");
+            $msg = 'HELO ' . $domain;
+            fwrite($sock, $msg . "\r\n");
             $reply = fread($sock, 2082);
 
+            /* // check for STARTTLS
+            if ($port !== 25) {
+                fwrite($sock, 'STARTTLS');
+                $reply = fread($sock, 2082);
+                if (false === stream_socket_enable_crypto($smtp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+                    fclose($sock);
+                    return $result;
+                }
+            }*/
+
             // sender call
-            $msg = "MAIL FROM: <".$name.'@'.$domain.">";
-            fwrite($sock, $msg."\r\n");
+            $msg = 'MAIL FROM: <' . $name . '@' . $domain . '>';
+            fwrite($sock, $msg . "\r\n");
             $reply = fread($sock, 2082);
 
             // ask to receiver
-            $msg = "RCPT TO: <".$name.'@'.$domain.">";
-            fwrite($sock, $msg."\r\n");
+            $msg = 'RCPT TO: <' . $name . '@' . $domain . '>';
+            fwrite($sock, $msg . "\r\n");
             $reply = fread($sock, 2082);
 
             // get response
             preg_match('/^([0-9]{3}) /ims', $reply, $matches);
             $code = isset($matches[1]) ? $matches[1] : '';
 
-            if ($code == '250') {
+            if ($code === '250') {
                 // email address accepted : 250
                 $result = true;
-            } elseif ($code == '451' || $code == '452') {
+            } elseif ($code === '451' || $code === '452') {
                 //email address greylisted : 451
                 $result = true;
             } else {
@@ -111,27 +162,13 @@ class BaseController
             }
 
             //quit SMTP connection
-            $msg = "quit";
-            fwrite($sock, $msg."\r\n");
+            $msg = 'quit';
+            fwrite($sock, $msg . "\r\n");
             //close socket
             fclose($sock);
         }
 
         return $result;
-    }
-
-    public function getStorageDir()
-    {
-        return trim($this->getOrDefault('STORAGE', '../storage/'), '/') . '/';
-    }
-
-    public function getOrDefault($key, $default = null)
-    {
-        $rst = $this->f3->get($key);
-        if (!isset($rst)) {
-            return $default;
-        }
-        return $rst;
     }
 
     /**
@@ -145,7 +182,7 @@ class BaseController
         $body    = json_encode($data, JSON_PRETTY_PRINT);
         $headers = array_key_exists('headers', $params) ? $params['headers'] : [];
 
-        // set ttl
+                                                                             // set ttl
         $ttl = (int) array_key_exists('ttl', $params) ? $params['ttl'] : -1; // cache for $ttl seconds
         if (empty($ttl)) {
             $ttl = -1;
@@ -158,11 +195,11 @@ class BaseController
             'Access-Control-Allow-Methods'     =>
             array_key_exists('acl_http_methods', $params) ? $params['acl_http_methods'] : null,
             'Access-Control-Allow-Origin'      =>
-                array_key_exists('acl_origin', $params) ? $params['acl_origin'] : '*',
+            array_key_exists('acl_origin', $params) ? $params['acl_origin'] : '*',
             'Access-Control-Allow-Credentials' =>
             array_key_exists('acl_credentials', $params) && !empty($params['acl_credentials']) ? 'true' : 'false',
             'ETag'                             => array_key_exists('etag', $params) ? $params['etag'] : md5($body),
-            'Content-Length'                   => \UTF::instance()->strlen($body),
+            'Content-Length'                   => \UTF::instance()->strlen($body)
         ]);
 
         // send the headers + data
