@@ -34,4 +34,4 @@ public/tmp/
 storage/build/*
 storage/data/*.sqlit*
 .env.ini
-
+dist.tar

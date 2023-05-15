@@ -5,13 +5,13 @@
     "type": "project",
     "license": "MIT",
     "require": {
-        "php": "^7.3",
-        "bcosca/fatfree": "^3.7.3"
+        "php": "^7.4 || ^8.0",
+        "bcosca/fatfree-core": "^3.8.1"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "^2.17.3",
-        "phpunit/phpunit": "^9.5.0",
-        "mockery/mockery": "^1.4.2"
+        "friendsofphp/php-cs-fixer": "^3.16.0",
+        "phpunit/phpunit": "^9.6.8",
+        "mockery/mockery": "^1.5.1"
     },
     "autoload": {
         "psr-4": {
@@ -27,8 +27,7 @@
         "phpcs": "phpcs",
         "phpcs:fix": "phpcbf -w",
         "app:clear": [
-            "rm -rf ./storage/build",
-            "mkdir -p ./storage/build",
+            "rm -f dist.tar",
             "rm -f ./storage/cache/*.*",
             "rm -f ./public/tmp/cache/*.*",
             "rm -f ./storage/data/*.sqli*",
@@ -36,16 +35,30 @@
         ],
         "app:package": [
             "composer app:clear",
-            "composer update",
-            "COPYFILE_DISABLE=1 tar -X './.packageignore' -zcvf ./storage/build/dist.tar.gz ./"
+            "composer install --no-dev --optimize-autoloader",
+            "composer archive",
+            "mv dist-*.tar dist.tar",
+            "tar -rvf dist.tar vendor"
         ],
         "app:production": [
             "composer app:clear",
             "echo 'composer install --no-dev --optimize-autoloader'"
-        ],
-        "docker:clear": [
-            "rm -rf .docker/data/mysql/*",
-            "rm -rf .docker/logs/*"
+        ]
+    },
+    "archive": {
+        "name": "dist",
+        "exclude": [
+            ".docker/",
+            "coverage/",
+            "dist/",
+            "node_modules/",
+            "tests/",
+            "vendor/",
+            ".DS_Store",
+            ".env",
+            ".phpunit.result.cache",
+            "*.md",
+            "*.xml"
         ]
     }
 }
