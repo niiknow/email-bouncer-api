@@ -6,7 +6,7 @@
     "license": "MIT",
     "require": {
         "php": "^7.4 || ^8.0",
-        "bcosca/fatfree-core": "^3.8.1"
+        "bcosca/fatfree-core": "^3.8.2"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.16.0",
