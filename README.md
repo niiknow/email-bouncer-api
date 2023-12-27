@@ -11,17 +11,27 @@
 
 To run locally:
 ```
+cp .env.example.ini .env.ini
 composer install
 php -S 0.0.0.0:8888 -t public
 ```
 
 To run with docker:
 ```
+cp .env.example.ini .env.ini
 composer install
 docker-compose up -d
 ```
 
 Then visit: http://localhost:8888
+
+Tip for composer in production, simply execute:
+```
+docker pull composer
+docker run --rm --interactive --tty \
+  --volume $PWD:/app \
+  composer composer app:production
+```
 
 ## API
 
