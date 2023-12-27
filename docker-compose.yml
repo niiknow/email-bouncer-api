@@ -11,5 +11,5 @@ services:
       [
         "bash",
         "-c",
-        "a2enmod rewrite && apache2-foreground",
+        "a2enmod rewrite && chmod 775 /var/www/public && chmod 775 www-data:www-data /var/www/storage && apache2-foreground",
       ]
