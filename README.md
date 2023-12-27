@@ -30,7 +30,7 @@ Tip for composer in production, simply execute:
 docker pull composer
 docker run --rm --interactive --tty \
   --volume $PWD:/app \
-  composer composer app:production
+  composer composer install --no-dev --optimize-autoloader
 ```
 
 ## API
