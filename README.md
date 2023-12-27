@@ -21,6 +21,8 @@ composer install
 docker-compose up -d
 ```
 
+Then visit: http://localhost:8888
+
 ## API
 
 ### POST|GET /api/v1/bounces/hard?email=a-valid@email.com
