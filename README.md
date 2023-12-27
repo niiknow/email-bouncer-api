@@ -15,6 +15,12 @@ composer install
 php -S 0.0.0.0:8888 -t public
 ```
 
+To run with docker:
+```
+composer install
+docker-compose up -d
+```
+
 ## API
 
 ### POST|GET /api/v1/bounces/hard?email=a-valid@email.com
