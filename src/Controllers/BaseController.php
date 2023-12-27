@@ -4,14 +4,17 @@ namespace App\Controllers;
 class BaseController
 {
     /**
+     * Fat Free Instance
+     */
+    protected \Base $f3;
+
+    /**
      * @param \Base $f3
      * @param array $params
      */
     public function __construct(\Base $f3, array $params = [])
     {
-        $this->f3     = $f3;
-        $this->params = $params;
-        $this->cache  = \Cache::instance();
+        $this->f3 = $f3;
     }
 
     /**
