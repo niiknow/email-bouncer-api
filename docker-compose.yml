@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  bouncer:
+    image: php:8.2-apache
+    ports:
+      - 8080:80
+    volumes:
+      - .:/var/www
+    command:
+      [
+        "bash",
+        "-c",
+        "a2enmod rewrite && apache2-foreground",
+      ]

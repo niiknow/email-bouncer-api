@@ -26,7 +26,6 @@ public/js/parts/*
 !.docker/logs/*.gitkeep
 .env
 storage/installed
-docker-compose.yml
 ._*.png
 ._*
 
