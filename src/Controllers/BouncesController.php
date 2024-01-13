@@ -6,7 +6,7 @@ class BouncesController extends BaseController
 {
     protected function handleBounce($from, $email, $reason, $increment = 1)
     {
-        if (!$this->isValidEmail($email)) {
+        if (! $this->isValidEmail($email)) {
             return;
         }
 
@@ -14,10 +14,6 @@ class BouncesController extends BaseController
         $db    = $this->getOrDefault('DB', null);
         $item  = new \DB\SQL\Mapper($db, 'bounces');
         $item->load(array('email=?', $email));
-
-        if ($increment > 7) {
-            $$increment = 7;
-        }
 
         if ($item->dry()) {
             // insert new
@@ -38,13 +34,12 @@ class BouncesController extends BaseController
         $item->from    = $this->getOrDefault('GET.from', $from);
         $item->count  += $increment;
 
-        $exp_min = pow(8, $item->count);
-
-        if (is_infinite($exp_min)) {
-            $exp_min = PHP_INT_MAX;
+        // max ban 365 days or 1 year
+        if ($item->count > 365) {
+            $item->count = 365;
         }
 
-        $exp_at = (new \DateTime())->add(\DateInterval::createFromDateString($exp_min . ' minutes'));
+        $exp_at = (new \DateTime())->add(\DateInterval::createFromDateString($item->count . ' days'));
 
         // echo $exp_at->format('Y-m-d H:i:s');
         $item->expired_at = $exp_at->format('Y-m-d H:i:s');
@@ -58,14 +53,14 @@ class BouncesController extends BaseController
      */
     public function remove()
     {
-        $values  = explode(',', $this->getOrDefault('GET.emails', ''));
+        $emails  = $this->getOrDefault('GET.emails', '');
+        $values  = array_map('trim', explode(',', $emails));
         $count   = count($values);
         $db      = $this->getOrDefault('DB', null);
         $results = $db->exec(
             "DELETE FROM bounces WHERE email in ( ?".str_repeat(", ?", $count-1).")",
             $values
         );
-
 
         $this->json([
             'emails' => $values,
@@ -80,7 +75,7 @@ class BouncesController extends BaseController
     public function hard()
     {
         $email = $this->getOrDefault('GET.email', null);
-        $this->handleBounce(null, $email, 'hard|5xx', 7);  // 7 is ~ 4 years, 8 ~ 32 years
+        $this->handleBounce(null, $email, 'hard|5xx', 365);
     }
 
     /**
@@ -98,7 +93,7 @@ class BouncesController extends BaseController
     public function complaint()
     {
         $email = $this->getOrDefault('GET.email', null);
-        $this->handleBounce(null, $email, 'complaint', 3);
+        $this->handleBounce(null, $email, 'complaint');
     }
 
     /**
@@ -124,8 +119,11 @@ class BouncesController extends BaseController
         $http_expire = 20 * 60;
 
         if ($item->dry()) {
-            return $this->json([
-                'throttle' => -1, 'sendable' => true],
+            return $this->json(
+                [
+                    'throttle' => -1,
+                    'sendable' => true
+                ],
                 ['ttl' => $http_expire]
             );
         }
@@ -135,7 +133,7 @@ class BouncesController extends BaseController
         $expired_at = \DateTime::createFromFormat("Y-m-d H:i:s", $item->expired_at);
         $throttle   = $expired_at->getTimestamp() - time();
 
-        $this->json([
+        return $this->json([
             'throttle' => $throttle,
             'sendable' => ($throttle < 1)
         ], ['ttl' => $http_expire]);
@@ -146,11 +144,12 @@ class BouncesController extends BaseController
      */
     public function stats()
     {
-        $emails = explode(',', $this->getOrDefault('GET.emails', ''));
+        $emails = $this->getOrDefault('GET.emails', '');
+        $values = array_map('trim', explode(',', $emails));
         $rst    = [];
         $values = [];
 
-        foreach ($emails as $email) {
+        foreach ($values as $email) {
             if ($this->isValidEmail($email, true)) {
                 $values[] = $email;
             } else {
@@ -191,7 +190,7 @@ class BouncesController extends BaseController
 
             if ($message['bounce']['bounceType'] == 'Permanent') {
                 $bt = 'hard|';
-                $bc = 7; // 7 is ~ 4 years, 8 ~ 32 years
+                $bc = 365;
             }
 
             // handle recipients
@@ -202,7 +201,6 @@ class BouncesController extends BaseController
                 // 554 5.4.14 Hop count exceeded - possible mail loop ATTR34
                 if (isset($item['status']) && $item['status'][0] == '5') {
                     $bt = 'hard|';
-                    $bc = 4; // 3 days
                 }
 
                 $this->handleBounce(
@@ -220,15 +218,13 @@ class BouncesController extends BaseController
                     $this->handleBounce(
                         $source,
                         $item['emailAddress'],
-                        'complaint|' . $message['complaint']['complaintFeedbackType'],
-                        6 // 183 days or about 6 months
+                        'complaint|' . $message['complaint']['complaintFeedbackType']
                     );
                 } else {
                     $this->handleBounce(
                         $source,
                         $item['emailAddress'],
-                        'complaint',
-                        3
+                        'complaint'
                     );
                 }
             }

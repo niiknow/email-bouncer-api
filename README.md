@@ -35,22 +35,25 @@ docker run --rm --interactive --tty \
 
 ## API
 
-### POST|GET /api/v1/bounces/hard?email=a-valid@email.com
-> Record email as hard bounce - block for 8^7 minutes
-
-### POST|GET /api/v1/bounces/soft?email=a-valid@email.com
-> Record email as soft bounce - block exponentially in multiple of 8^n minutes
-
-1. First soft bounce, block for 8 minutes
-2. Second soft bounce within 8 minutes, block for 64 minutes
-3. Third soft bounce within 64 minutes, block for 512 minutes
-4. Forth soft bounce within 512 minutes, block for 4096 minutes ~ 3 days
-5. And so on...
-
 ### POST|GET /api/v1/bounces/complaint?email=a-valid@email.com
-> Record email as soft bounce - block exponentially for 8^3 minutes
+> Record email as soft bounce - block similar to soft bounce
 
 Complaint is in between a soft bounce and a hard bounce.  It could be because the emailing System scan attachment and detect as a virus, or an actual User complaint with their email Provider.
+
+### POST|GET /api/v1/bounces/hard?email=a-valid@email.com
+> Record email as hard bounce - block for 1 year
+
+### POST|GET /api/v1/bounces/remove?emails=a-invalid@email.com,b-invalid@email.net,c-invalid@email.org
+> Bulk remove emails from bounce
+
+### POST|GET /api/v1/bounces/soft?email=a-valid@email.com
+> Record email as soft bounce - block incremental of 1 day
+
+1. First soft bounce, block for 1 day
+2. Second soft bounce within 1 day, block for 2 days
+3. Third soft bounce within 2 day, block for 3 days
+4. Forth soft bounce within 3 day, block for 4 days
+5. And so on... up to 365 days max
 
 ### GET /api/v1/bounces/stat?email=a-valid@email.com
 > Determine if email is sendable

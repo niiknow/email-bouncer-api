@@ -5,7 +5,8 @@ services:
     image: php:8.2-apache
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost/ | grep -q OK"]
+      test: ["CMD-SHELL", "curl -s http://localhost/?purge=true | grep -q 
+OK"]
       interval: 30s
       timeout: 15s
       retries: 3

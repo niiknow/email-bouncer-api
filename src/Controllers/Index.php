@@ -15,7 +15,7 @@ class Index extends BaseController
                 'DELETE FROM bounces WHERE expired_at < CURRENT_TIMESTAMP'
             );
 
-            return $this->json('OK purged!');
+            return $this->json('OK');
         }
 
         $this->json('OK');
