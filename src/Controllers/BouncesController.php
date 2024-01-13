@@ -54,8 +54,9 @@ class BouncesController extends BaseController
 
     /**
      * bulk remove email from bounces
+     *
      */
-    protected function unBounce()
+    public function remove()
     {
         $values  = explode(',', $this->getOrDefault('GET.emails', ''));
         $count   = count($values);
@@ -64,6 +65,13 @@ class BouncesController extends BaseController
             "DELETE FROM bounces WHERE email in ( ?".str_repeat(", ?", $count-1).")",
             $values
         );
+
+
+        $this->json([
+            'emails' => $values,
+            'sendable' => true,
+            ['ttl' => 5] // very low ttl, basically no cache
+        ]);
     }
 
     /**
