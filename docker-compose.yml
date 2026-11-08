@@ -2,7 +2,7 @@ version: '3'
 
 services:
   bouncer:
-    image: php:8.2-apache
+    image: php:8.5-apache
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "curl -s http://localhost/?purge=true | grep -q OK"]
