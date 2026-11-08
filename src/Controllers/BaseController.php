@@ -75,10 +75,7 @@ class BaseController
 
         // check SMTP query
         $max_conn_time = 30;
-        $sock          = '';
-        $port          = 25;
         $max_read_time = 5;
-        $users         = $name;
         $hosts         = [];
         $mxweights     = [];
 
@@ -88,30 +85,17 @@ class BaseController
         $mxs[$domain] = 100;
         $timeout      = $max_conn_time / count($mxs);
 
-        // try to check each host port 25
-        while (list($host) = each($mxs)) {
-            // connect to SMTP server
-            if ($sock = fsockopen($host, $port, $errno, $errstr, (float) $timeout)) {
-                stream_set_timeout($sock, $max_read_time);
-                break;
-            }
-        }
-        // try to check each host port 2525
-        $port = 2525;
-        while (list($host) = each($mxs)) {
-            // connect to SMTP server
-            if ($sock = fsockopen($host, $port, $errno, $errstr, (float) $timeout)) {
-                stream_set_timeout($sock, $max_read_time);
-                break;
-            }
-        }
-        // try to check each host port 587
-        $port = 587;
-        while (list($host) = each($mxs)) {
-            // connect to SMTP server
-            if ($sock = fsockopen($host, $port, $errno, $errstr, (float) $timeout)) {
-                stream_set_timeout($sock, $max_read_time);
-                break;
+        // try each host on port 25, then 2525, then 587; stop at the first connection
+        // note: each() was removed in PHP 8, so plain foreach loops are used here
+        $sock = false;
+        foreach ([25, 2525, 587] as $port) {
+            foreach (array_keys($mxs) as $host) {
+                // @ - a failed connection must not be escalated to an HTTP 500 by the F3 error handler
+                $sock = @fsockopen($host, $port, $errno, $errstr, (float) $timeout);
+                if ($sock) {
+                    stream_set_timeout($sock, $max_read_time);
+                    break 2;
+                }
             }
         }
 
@@ -185,11 +169,8 @@ class BaseController
         $body    = json_encode($data, JSON_PRETTY_PRINT);
         $headers = array_key_exists('headers', $params) ? $params['headers'] : [];
 
-                                                                             // set ttl
-        $ttl = (int) array_key_exists('ttl', $params) ? $params['ttl'] : -1; // cache for $ttl seconds
-        if (empty($ttl)) {
-            $ttl = -1;
-        }
+        // cache for $ttl seconds, -1 means no cache
+        $ttl = array_key_exists('ttl', $params) ? (int) $params['ttl'] : -1;
 
         $headers = array_merge($headers, [
             'content-type'                     => 'application/json; charset=utf-8',
@@ -202,7 +183,7 @@ class BaseController
             'Access-Control-Allow-Credentials' =>
             array_key_exists('acl_credentials', $params) && !empty($params['acl_credentials']) ? 'true' : 'false',
             'ETag'                             => array_key_exists('etag', $params) ? $params['etag'] : md5($body),
-            'Content-Length'                   => \UTF::instance()->strlen($body)
+            'Content-Length'                   => strlen($body) // bytes, not characters
         ]);
 
         // send the headers + data

@@ -49,8 +49,8 @@ function boot()
     // F3 autoloader for application business code
     $f3->set('AUTOLOAD', APP_PATH . '/src/');
 
-    // load env
-    $f3->config(APP_PATH . '/.env.ini');
+    // load env; APP_CONFIG allows pointing to an alternate ini file (used by tests)
+    $f3->config(getenv('APP_CONFIG') ?: APP_PATH . '/.env.ini');
 
     initdb($f3);
 

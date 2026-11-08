@@ -64,9 +64,8 @@ class BouncesController extends BaseController
 
         $this->json([
             'emails' => $values,
-            'sendable' => true,
-            ['ttl' => 5] // very low ttl, basically no cache
-        ]);
+            'sendable' => true
+        ], ['ttl' => 5]); // very low ttl, basically no cache
     }
 
     /**
@@ -145,11 +144,11 @@ class BouncesController extends BaseController
     public function stats()
     {
         $emails = $this->getOrDefault('GET.emails', '');
-        $values = array_map('trim', explode(',', $emails));
+        $emails = array_filter(array_map('trim', explode(',', $emails)), 'strlen');
         $rst    = [];
         $values = [];
 
-        foreach ($values as $email) {
+        foreach ($emails as $email) {
             if ($this->isValidEmail($email, true)) {
                 $values[] = $email;
             } else {
@@ -168,13 +167,40 @@ class BouncesController extends BaseController
 
             $today = time();
             foreach ($results as $item) {
-                $expired_at = \DateTime::createFromFormat("Y-m-d H:i:s", $item->expired_at);
+                // DB\SQL::exec() returns rows as associative arrays
+                $expired_at = \DateTime::createFromFormat("Y-m-d H:i:s", $item['expired_at']);
 
-                $rst[$item->email] = $expired_at->getTimestamp() - $today;
+                $rst[$item['email']] = $expired_at->getTimestamp() - $today;
             }
         }
 
         return $this->json($rst);
+    }
+
+    /**
+     * check if an email has a valid format and MX record
+     */
+    public function validEmail()
+    {
+        $email = $this->getOrDefault('GET.email', null);
+
+        return $this->json([
+            'email' => $email,
+            'valid' => (bool) $this->isValidEmail($email, true)
+        ]);
+    }
+
+    /**
+     * check if an email inbox exists at the destination mail server
+     */
+    public function validInbox()
+    {
+        $email = $this->getOrDefault('GET.email', null);
+
+        return $this->json([
+            'email' => $email,
+            'valid' => (bool) $this->isValidInbox($email)
+        ]);
     }
 
     protected function handleNotification($payload)

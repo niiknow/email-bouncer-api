@@ -24,6 +24,8 @@
         }
     },
     "scripts": {
+        "test": "phpunit",
+        "test:coverage": "XDEBUG_MODE=coverage phpunit --coverage-text --coverage-html coverage",
         "phpcs": "phpcs",
         "phpcs:fix": "phpcbf -w",
         "app:clear": [

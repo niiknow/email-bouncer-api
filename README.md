@@ -25,6 +25,16 @@ docker-compose up -d
 
 Then visit: http://localhost:8888
 
+## Testing
+
+```
+composer test             # unit, feature (F3 router) and end-to-end (built-in server) suites
+composer test:coverage    # requires pcov or xdebug; HTML report in ./coverage
+```
+
+Tests never touch the network: DNS/SMTP/HTTP calls made by the controllers are replaced with
+stubs in `tests/Support/functions.php`.
+
 Tip for composer in production, simply execute:
 ```
 docker pull composer
@@ -85,7 +95,7 @@ Result contain only emails that are found (previously bounced); if we do not hav
 }
 ```
 
-### GET /api/v1/bounces/aws-ses
+### POST /api/v1/bounces/aws-ses
 > This endpoint is use for handling AWS SES->SNS subscription/webhook.  See also - https://docs.aws.amazon.com/ses/latest/DeveloperGuide/event-publishing-retrieving-sns-examples.html 
 
 This feature makes it all worth it.

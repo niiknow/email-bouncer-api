@@ -34,3 +34,5 @@ storage/build/*
 storage/data/*.sqlit*
 .env.ini
 dist.tar
+
+.phpunit.cache/
