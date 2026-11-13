@@ -13,7 +13,7 @@ services:
     ports:
       - 8888:80
     volumes:
-      - .:/var/www
+      - './:/var/www'
     command:
       [
         "bash",
