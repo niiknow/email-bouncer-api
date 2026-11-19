@@ -35,3 +35,6 @@ storage/data/*.sqlit*
 dist.tar
 
 .phpunit.cache/
+vendor/*
+
+docker-compose.override.yml
