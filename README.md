@@ -13,7 +13,7 @@ To run locally:
 ```
 cp .env.example.ini .env.ini
 composer install
-php -S 0.0.0.0:8888 -t public
+php -S 0.0.0.0:8080 -t public
 ```
 
 To run with docker:
@@ -23,7 +23,7 @@ composer install
 docker-compose up -d
 ```
 
-Then visit: http://localhost:8888
+Then visit: http://localhost:8080
 
 ## Testing
 

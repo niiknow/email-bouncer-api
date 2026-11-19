@@ -1,20 +1,15 @@
-version: '3'
-
 services:
   bouncer:
-    image: php:8.5-apache
+    image: serversideup/php:fpm-apache-v5.1.5
     restart: always
+    environment:
+      PHP_OPCACHE_ENABLE: "1"
     healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost/?purge=true | grep -q OK"]
+      test: ["CMD-SHELL", "curl -s http://localhost:8080/?purge=true | grep -q OK"]
       interval: 30s
       timeout: 15s
       retries: 3
       start_period: 60s
     volumes:
-      - './:/var/www'
-    command:
-      [
-        "bash",
-        "-c",
-        "a2enmod rewrite && chown -R www-data:www-data /var/www/public && chown -R www-data:www-data /var/www/storage && apache2-foreground",
-      ]
+      - './:/var/www/html'
+      - './.docker/entrypoint.d/20-composer-install.sh:/etc/entrypoint.d/20-composer-install.sh:ro'
